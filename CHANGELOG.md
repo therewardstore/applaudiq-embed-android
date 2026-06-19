@@ -26,4 +26,4 @@ First production release of the native Android SDK — parity with the iOS + Web
   builds); file access is disabled; mixed content blocked; tokens/codes are never logged; the `aiq_embed_` secret
   is never accepted.
 - **API surface:** `ApplaudIQEmbed.open(context, Config(...))` (Kotlin) and `AIQEmbed.open(...)` with a
-  `Listener` (Java). Published as `com.applaudiq:embed`.
+  `Listener` (Java). Published on Maven Central as `com.applaudiq:embed`.

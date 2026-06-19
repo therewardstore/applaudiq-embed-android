@@ -5,7 +5,7 @@ Embed the **Applaud IQ** recognition portal inside a native Android app. The SDK
 one-time token), open the embed, and handle a few callbacks.
 
 - **Android 6.0+ (API 23+)** · Kotlin **and** Java · only AndroidX (`activity`, `browser`, `webkit`)
-- Install via **Gradle** (Maven / JitPack) or **manually** (source module)
+- Install via **Gradle** (Maven Central) or **manually** (source module)
 
 ---
 
@@ -13,17 +13,11 @@ one-time token), open the embed, and handle a few callbacks.
 
 ### 1. Install
 
-**Gradle (Maven Central)** — in your module `build.gradle`:
+**Gradle (Maven Central)** — ensure `mavenCentral()` is in your `settings.gradle` repositories, then in your
+module `build.gradle`:
 
 ```groovy
 implementation 'com.applaudiq:embed:1.0.0'
-```
-
-**Gradle (JitPack)** — add JitPack in `settings.gradle`, then depend on the tag:
-
-```groovy
-// settings.gradle → dependencyResolutionManagement { repositories { ... maven { url 'https://jitpack.io' } } }
-implementation 'com.github.therewardstore:applaudiq-embed-android:1.0.0'
 ```
 
 **Manual (source module)** — clone this repo (or add it as a git submodule) next to your app and include it:
