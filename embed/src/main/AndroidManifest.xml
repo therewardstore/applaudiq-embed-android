@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <!-- The SSO callback scheme/host the Custom Tabs flow returns to. Defaults to
+             applaudiq://sso-callback; each consuming app SHOULD set a UNIQUE scheme via the
+             aiqSsoScheme/aiqSsoHost manifest placeholders (build.gradle) so two Applaud IQ apps on
+             one device don't both claim it — which would pop an Android "Open with" chooser and
+             misroute the one-time SSO code. The Activity reads this to send `native_redirect` and to
+             match the returning deep link. -->
+        <meta-data
+            android:name="com.applaudiq.embed.SSO_CALLBACK"
+            android:value="${aiqSsoScheme}://${aiqSsoHost}" />
+
+        <!-- Embed host activity. singleTask → the callback returns via onNewIntent to the live WebView. -->
+        <activity
+            android:name=".ApplaudIQEmbedActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${aiqSsoScheme}" android:host="${aiqSsoHost}" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

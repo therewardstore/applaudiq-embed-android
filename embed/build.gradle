@@ -1,0 +1,80 @@
+// ApplaudIQ Embed SDK — Android library module.
+import com.vanniktech.maven.publish.SonatypeHost
+
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.vanniktech.maven.publish'
+}
+
+android {
+    namespace 'com.applaudiq.embed'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 23
+        targetSdk 35
+        consumerProguardFiles 'consumer-rules.pro'
+        // NOTE: the SSO callback scheme/host placeholders (aiqSsoScheme / aiqSsoHost, used in
+        // AndroidManifest.xml) are intentionally NOT defaulted here. A library default would be baked
+        // into the AAR and could not be overridden by the consumer (the AppAuth redirect-scheme
+        // contract). The CONSUMING APP MUST set them in its own build.gradle `manifestPlaceholders`
+        // (e.g. aiqSsoScheme:'myapp', aiqSsoHost:'sso-callback') — each app registers its OWN scheme so
+        // two Applaud IQ apps on one device never collide on the callback (which would pop an Android
+        // "Open with" chooser and misroute the one-time SSO code). See the example app's build.gradle.
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+        // Emit real Java default methods for interface bodies (e.g. AIQEmbed.Listener) so Java
+        // callers can override only the callbacks they need.
+        freeCompilerArgs += ['-Xjvm-default=all']
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    implementation 'androidx.activity:activity-ktx:1.9.0'
+    implementation 'androidx.browser:browser:1.8.0'   // Chrome Custom Tabs for SSO
+    implementation 'androidx.webkit:webkit:1.11.0'    // documentStart injection, origin-scoped
+
+    testImplementation 'junit:junit:4.13.2'
+}
+
+group = 'com.applaudiq'
+version = '1.0.0'   // first Android release
+
+// Publishing to Maven Central via the Central Portal. The plugin builds the `release` publication
+// (with sources + javadoc jars) and GPG-signs every artifact. Credentials (Portal token +
+// signing key) live in ~/.gradle/gradle.properties, never in the repo.
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
+    coordinates('com.applaudiq', 'embed', '1.0.0')
+    pom {
+        name = 'ApplaudIQ Embed SDK (Android)'
+        description = 'Embed the Applaud IQ recognition portal in a native Android app.'
+        url = 'https://github.com/therewardstore/applaudiq-embed-android'
+        licenses {
+            license { name = 'MIT'; url = 'https://opensource.org/licenses/MIT' }
+        }
+        developers {
+            developer {
+                id = 'arulraj'
+                name = 'Arulraj V'
+                email = 'abofficial1997@gmail.com'
+            }
+        }
+        scm {
+            url = 'https://github.com/therewardstore/applaudiq-embed-android'
+            connection = 'scm:git:https://github.com/therewardstore/applaudiq-embed-android.git'
+            developerConnection = 'scm:git:ssh://git@github.com/therewardstore/applaudiq-embed-android.git'
+        }
+    }
+}
