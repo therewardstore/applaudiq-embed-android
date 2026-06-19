@@ -13,8 +13,8 @@ one-time token), open the embed, and handle a few callbacks.
 
 ### 1. Install
 
-**Gradle (Maven Central)** — ensure `mavenCentral()` is in your `settings.gradle` repositories, then in your
-module `build.gradle`:
+**Gradle (Maven Central)** ([central.sonatype.com](https://central.sonatype.com/artifact/com.applaudiq/embed)) —
+ensure `mavenCentral()` is in your `settings.gradle` repositories, then in your module `build.gradle`:
 
 ```groovy
 implementation 'com.applaudiq:embed:1.0.0'
