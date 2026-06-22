@@ -17,7 +17,7 @@ one-time token), open the embed, and handle a few callbacks.
 ensure `mavenCentral()` is in your `settings.gradle` repositories, then in your module `build.gradle`:
 
 ```groovy
-implementation 'com.applaudiq:embed:1.0.0'
+implementation 'com.applaudiq:embed:1.1.0'
 ```
 
 **Manual (source module)** — clone this repo (or add it as a git submodule) next to your app and include it:
@@ -140,7 +140,7 @@ AIQEmbed.open(context, "pk_live_…", null, AIQEmbed.Mode.AUTO, embedToken, new 
 - A brand-new employee signs in but sees a **pending HR approval** screen until an HR admin approves them
   (`onAuthPending` fires).
 - A runnable example lives in
-  [applaudiq-sdk-example](https://github.com/therewardstore/applaudiq-sdk-example) under
+  [applaudiq-sdk-example](https://github.com/therewardstore/applaudiq-sdk-example/tree/master/native-integration/android) under
   `native-integration/android/`.
 
 ## Go-live checklist
@@ -162,6 +162,10 @@ AIQEmbed.open(context, "pk_live_…", null, AIQEmbed.Mode.AUTO, embedToken, new 
 | **Java**   | `AIQEmbed.open(context, key, baseUrl, AIQEmbed.Mode, token, AIQEmbed.Listener)` — `Listener` has `onReady`/`onAuthPending`/`onError`/`onClose`/`onSignOut` (default no-ops) |
 
 `Mode` is `AUTO` (uses `token`) or `MANUAL` (no token). The publishable `key` is required in both modes.
+
+## Changelog
+
+Latest: **v1.1.0 (LTS)**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history (also shown on the Maven Central page).
 
 ## License
 
