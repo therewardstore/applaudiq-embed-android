@@ -201,15 +201,20 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
             completeSSO(code)
             return
         }
-        // Failure / identity-mismatch (?error=… or no code): surface it and reload the portal login
-        // so the user lands back on a clean, retry-able screen instead of a stuck WebView.
+        // Failure / identity-mismatch (?error=… or no code): surface it to the host AND show the failure
+        // INSIDE the embed — load the portal's own /sso-callback error page (the same page the web + Capacitor
+        // SDKs land on) so the message is visible; its "Return to login" goes back to the embed login.
         ssoInFlight = false
         val message = EmbedInternals.parseSsoError(uri, ssoScheme, ssoHost) ?: "sso_failed"
         config.onError?.invoke(message)
         if (this::webView.isInitialized) {
-            webView.loadUrl(
-                EmbedInternals.buildEmbedUrl(config.baseUrl, config.mode.raw, config.key, config.token),
-            )
+            // Show the failure on the FRAMEABLE embed page, which renders the "Authentication Failed" card
+            // (the portal's /sso-callback page is X-Frame-Options: DENY, so it can't be reused by the Capacitor
+            // iframe — all SDKs route SSO errors here for consistency). "Return to login" retries in the embed.
+            val errUrl =
+                EmbedInternals.buildEmbedUrl(config.baseUrl, config.mode.raw, config.key, config.token) +
+                    "&sso_error=" + java.net.URLEncoder.encode(message, "UTF-8")
+            webView.loadUrl(errUrl)
         }
     }
 

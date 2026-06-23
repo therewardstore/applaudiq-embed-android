@@ -3,6 +3,11 @@
 All notable changes to ApplaudIQEmbed (Android) are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — LTS
+
+**Long-Term Support (LTS) release.** Unified 1.1.1 across the Applaud IQ embed SDK family (Web · iOS · Android ·
+React Native · Flutter). Maintenance / version-alignment release — **no public API changes** since 1.1.0.
+
 ## [1.1.0]
 
 **Long-Term Support (LTS) release.** Unified 1.1.0 across the SDK family (Web · iOS · Android · React Native ·

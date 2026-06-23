@@ -17,7 +17,7 @@ one-time token), open the embed, and handle a few callbacks.
 ensure `mavenCentral()` is in your `settings.gradle` repositories, then in your module `build.gradle`:
 
 ```groovy
-implementation 'com.applaudiq:embed:1.1.0'
+implementation 'com.applaudiq:embed:1.1.1'
 ```
 
 **Manual (source module)** — clone this repo (or add it as a git submodule) next to your app and include it:
@@ -165,7 +165,7 @@ AIQEmbed.open(context, "pk_live_…", null, AIQEmbed.Mode.AUTO, embedToken, new 
 
 ## Changelog
 
-Latest: **v1.1.0 (LTS)**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history (also shown on the Maven Central page).
+Latest: **v1.1.1 (LTS)**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history (also shown on the Maven Central page).
 
 ## License
 

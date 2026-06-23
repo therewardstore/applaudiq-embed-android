@@ -48,7 +48,7 @@ dependencies {
 }
 
 group = 'com.applaudiq'
-version = '1.1.0'   // unified LTS release across the SDK family
+version = '1.1.1'   // unified LTS release across the SDK family
 
 // Publishing to Maven Central via the Central Portal. The plugin builds the `release` publication
 // (with sources + javadoc jars) and GPG-signs every artifact. Credentials (Portal token +
@@ -56,7 +56,7 @@ version = '1.1.0'   // unified LTS release across the SDK family
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
-    coordinates('com.applaudiq', 'embed', '1.1.0')
+    coordinates('com.applaudiq', 'embed', '1.1.1')
     pom {
         name = 'ApplaudIQ Embed SDK (Android)'
         description = 'Embed the Applaud IQ recognition portal in a native Android app.'
