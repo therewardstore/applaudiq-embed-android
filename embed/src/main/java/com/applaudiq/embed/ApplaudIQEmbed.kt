@@ -302,6 +302,13 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
                 val email = p?.optString("email").orEmpty().ifEmpty { null }
                 openSSO(provider, clientId, email)
             }
+            "applaudiq:open-external" -> {
+                // Reward-store downloads / payment / OAuth: open the URL in the system browser.
+                val url = d.optJSONObject("payload")?.optString("url").orEmpty()
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                }
+            }
         }
     }
 

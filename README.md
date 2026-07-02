@@ -17,7 +17,7 @@ one-time token), open the embed, and handle a few callbacks.
 ensure `mavenCentral()` is in your `settings.gradle` repositories, then in your module `build.gradle`:
 
 ```groovy
-implementation 'com.applaudiq:embed:1.1.1'
+implementation 'com.applaudiq:embed:1.2.0'
 ```
 
 **Manual (source module)** — clone this repo (or add it as a git submodule) next to your app and include it:
@@ -133,6 +133,15 @@ AIQEmbed.open(context, "pk_live_…", null, AIQEmbed.Mode.AUTO, embedToken, new 
 
 ---
 
+## Downloads & external links
+
+When the portal (or the reward store nested inside it) needs to open a URL outside the WebView —
+a file download, a payment page, or an OAuth handoff — it sends the `applaudiq:open-external` bridge
+message with payload `{ url }`. The SDK opens `http(s)` URLs in the **system browser**
+(`Intent.ACTION_VIEW`). No app code is required.
+
+---
+
 ## Test integration
 
 - Run on an emulator/device. **Manual login works with just the publishable key** — no server needed.
@@ -165,7 +174,7 @@ AIQEmbed.open(context, "pk_live_…", null, AIQEmbed.Mode.AUTO, embedToken, new 
 
 ## Changelog
 
-Latest: **v1.1.1 (LTS)**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history (also shown on the Maven Central page).
+Latest: **v1.2.0 (LTS)**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history (also shown on the Maven Central page).
 
 ## License
 

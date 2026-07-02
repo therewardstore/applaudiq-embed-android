@@ -3,6 +3,12 @@
 All notable changes to ApplaudIQEmbed (Android) are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — LTS
+
+**Reward-store downloads / external links.** The SDK now handles the `applaudiq:open-external` bridge message
+(payload `{ url }`) and opens the URL in the device's system browser — used by the embedded portal for file
+downloads, payment pages, and OAuth handoffs. Backward-compatible; no changes to the public API surface.
+
 ## [1.1.1] — LTS
 
 **Long-Term Support (LTS) release.** Unified 1.1.1 across the Applaud IQ embed SDK family (Web · iOS · Android ·
