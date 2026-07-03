@@ -3,6 +3,14 @@
 All notable changes to ApplaudIQEmbed (Android) are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — LTS
+
+**Reward-store voucher download.** Adds the `applaudiq:save-file` bridge message (payload
+`{ base64, filename, mime }`): the embedded reward store streams gift-card voucher bytes when a blob
+download can't reach disk in a WebView. The SDK decodes them, writes the file to the app cache, and opens
+the system share sheet via a scoped `FileProvider` (unique authority — no collision with the host app's
+provider) — no app code, no permissions. Backward-compatible.
+
 ## [1.2.0] — LTS
 
 **Reward-store downloads / external links.** The SDK now handles the `applaudiq:open-external` bridge message

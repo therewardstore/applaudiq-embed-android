@@ -17,7 +17,7 @@ one-time token), open the embed, and handle a few callbacks.
 ensure `mavenCentral()` is in your `settings.gradle` repositories, then in your module `build.gradle`:
 
 ```groovy
-implementation 'com.applaudiq:embed:1.2.0'
+implementation 'com.applaudiq:embed:1.3.0'
 ```
 
 **Manual (source module)** — clone this repo (or add it as a git submodule) next to your app and include it:
@@ -140,6 +140,10 @@ a file download, a payment page, or an OAuth handoff — it sends the `applaudiq
 message with payload `{ url }`. The SDK opens `http(s)` URLs in the **system browser**
 (`Intent.ACTION_VIEW`). No app code is required.
 
+The reward store's **gift-card voucher download** additionally sends `applaudiq:save-file` with
+`{ base64, filename, mime }`. The SDK writes the file to the app cache and opens the system share sheet
+via a scoped `FileProvider` — no app code, no permissions required.
+
 ---
 
 ## Test integration
@@ -174,7 +178,7 @@ message with payload `{ url }`. The SDK opens `http(s)` URLs in the **system bro
 
 ## Changelog
 
-Latest: **v1.2.0 (LTS)**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history (also shown on the Maven Central page).
+Latest: **v1.3.0 (LTS)**. See [CHANGELOG.md](./CHANGELOG.md) for the full release history (also shown on the Maven Central page).
 
 ## License
 

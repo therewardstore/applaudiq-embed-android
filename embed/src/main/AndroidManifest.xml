@@ -13,6 +13,19 @@
             android:name="com.applaudiq.embed.SSO_CALLBACK"
             android:value="${aiqSsoScheme}://${aiqSsoHost}" />
 
+        <!-- Scoped FileProvider for reward-store voucher downloads (applaudiq:save-file). The authority is
+             deliberately UNIQUE (…aiqembed.fileprovider, not …fileprovider) so it can never collide with the
+             host app's own FileProvider when the two manifests merge. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.aiqembed.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/aiq_embed_file_paths" />
+        </provider>
+
         <!-- Embed host activity. singleTask → the callback returns via onNewIntent to the live WebView. -->
         <activity
             android:name=".ApplaudIQEmbedActivity"

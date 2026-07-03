@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scoped FileProvider paths for reward-store voucher downloads. Exposes the app cache dir (where
+     ApplaudIQEmbed writes the voucher file under aiq_embed/) so it can be shared via ACTION_SEND. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="aiq_embed" path="." />
+</paths>

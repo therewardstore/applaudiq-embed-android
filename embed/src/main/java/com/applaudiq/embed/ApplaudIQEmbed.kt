@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
@@ -15,6 +16,8 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.content.FileProvider
+import java.io.File
 import org.json.JSONObject
 
 /**
@@ -309,7 +312,47 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
                     runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                 }
             }
+            "applaudiq:save-file" -> {
+                // Reward-store voucher download: the embed streamed the file bytes (base64) because a
+                // blob download can't reach disk inside the WebView. Save + share via a scoped FileProvider.
+                val p = d.optJSONObject("payload")
+                val base64 = p?.optString("base64").orEmpty()
+                val rawName = p?.optString("filename").orEmpty().ifEmpty { "download" }
+                // basename only — strip any path separators the web supplied (no path traversal).
+                val filename = rawName.substringAfterLast('/').substringAfterLast('\\').ifEmpty { "download" }
+                val mime = p?.optString("mime").orEmpty().ifEmpty { "application/octet-stream" }
+                if (base64.isNotEmpty()) saveAndShareFile(base64, filename, mime)
+            }
         }
+    }
+
+    /**
+     * Decode base64 file bytes → app cache → OS share sheet, via the SDK's scoped FileProvider. The write
+     * runs off the UI thread; the chooser is presented back on it. Best-effort: any decode/write/share
+     * failure is swallowed so the host app never crashes.
+     */
+    private fun saveAndShareFile(base64: String, filename: String, mime: String) {
+        Thread {
+            val uri = try {
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                val dir = File(cacheDir, "aiq_embed").apply { mkdirs() }
+                val file = File(dir, filename)
+                file.outputStream().use { it.write(bytes) }
+                FileProvider.getUriForFile(this, "$packageName.aiqembed.fileprovider", file)
+            } catch (e: Exception) {
+                null
+            } ?: return@Thread
+            runOnUiThread {
+                runCatching {
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = mime
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(send, filename))
+                }
+            }
+        }.start()
     }
 
     private fun fireReady() {
