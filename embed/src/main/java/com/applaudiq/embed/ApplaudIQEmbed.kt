@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
 import android.view.ViewGroup
+import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -17,6 +18,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.FileProvider
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import java.io.File
 import org.json.JSONObject
 
@@ -72,6 +75,12 @@ object ApplaudIQEmbed {
          * keep the default (Back closes the embed immediately).
          */
         val backNavigation: Boolean = true,
+        /**
+         * When true, the portal's cookies are expired when the embed closes, so a session does not
+         * outlive the embed (as the iOS SDK's non-persistent web data store does). Off by default so
+         * existing apps keep their session between opens; turn it on for shared or kiosk devices.
+         */
+        val clearSessionOnClose: Boolean = false,
     )
 
     private var pending: Config? = null
@@ -93,6 +102,9 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
     private var readyFired = false
     private var initErrorFired = false
     private var ssoInFlight = false
+    // True when the bridge is the origin-scoped WebMessageListener (main frame + portal origin only);
+    // false on old WebView providers, where the legacy @JavascriptInterface (gated per call) is used.
+    private var usesMessageListener = false
 
     // The app's SSO callback deep link — each app registers its OWN (default `applaudiq://sso-callback`)
     // via the `aiqSsoScheme`/`aiqSsoHost` manifest placeholders, so two Applaud IQ apps on one device
@@ -110,6 +122,7 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
 
     private companion object {
         const val STATE_SSO_IN_FLIGHT = "aiq_sso_in_flight"
+        const val LEGACY_BRIDGE = "ApplaudIQAndroid"
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -149,9 +162,9 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
             }
             // No on-disk debugging in release builds.
             WebView.setWebContentsDebuggingEnabled(debug)
-            addJavascriptInterface(Bridge(), "ApplaudIQAndroid")
             webViewClient = EmbedWebViewClient()
         }
+        installBridge()
         setContentView(webView)
 
         // Hardware Back steps back through the embed's WebView history; at the root it falls
@@ -166,7 +179,7 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
         }
 
         webView.loadUrl(
-            EmbedInternals.buildEmbedUrl(config.baseUrl, config.mode.raw, config.key, config.token),
+            EmbedInternals.buildEmbedUrl(config.baseUrl, config.mode.raw, config.key),
         )
         handleDeepLink(intent)
     }
@@ -184,11 +197,64 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
     override fun onDestroy() {
         // Tear down the WebView cleanly so the in-memory portal session doesn't linger.
         if (this::webView.isInitialized) {
-            webView.removeJavascriptInterface("ApplaudIQAndroid")
+            if (usesMessageListener) {
+                runCatching { WebViewCompat.removeWebMessageListener(webView, EmbedInternals.NATIVE_BRIDGE) }
+            } else {
+                webView.removeJavascriptInterface(LEGACY_BRIDGE)
+            }
             (webView.parent as? ViewGroup)?.removeView(webView)
             webView.destroy()
+            // A config-change recreation is not a close; keep the session for the recreated Activity.
+            if (config.clearSessionOnClose && !isChangingConfigurations) clearPortalCookies()
         }
         super.onDestroy()
+    }
+
+    /**
+     * Native bridge. Preferred: `WebViewCompat.addWebMessageListener`, which injects
+     * `window.ReactNativeWebView.postMessage` (the exact call the portal's postToHost() makes) ONLY into
+     * frames on the portal origin, and reports the sender's origin + whether it is the main frame, so a
+     * sub-frame (ads, widgets, an injected iframe) can never drive the bridge. Fallback for WebView
+     * providers without WEB_MESSAGE_LISTENER: the legacy @JavascriptInterface, gated on every call.
+     */
+    private fun installBridge() {
+        val origin = EmbedInternals.originOf(config.baseUrl)
+        if (origin != null && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            usesMessageListener = runCatching {
+                WebViewCompat.addWebMessageListener(
+                    webView,
+                    EmbedInternals.NATIVE_BRIDGE,
+                    setOf(origin),
+                ) { _, message, sourceOrigin, isMainFrame, _ ->
+                    // Delivered on the UI thread. Main frame on the portal origin only.
+                    if (!isMainFrame || !EmbedInternals.sameOrigin(sourceOrigin.toString(), config.baseUrl)) {
+                        return@addWebMessageListener
+                    }
+                    message.data?.let(::dispatch)
+                }
+                true
+            }.getOrDefault(false)
+        }
+        if (!usesMessageListener) webView.addJavascriptInterface(Bridge(), LEGACY_BRIDGE)
+    }
+
+    /**
+     * Expire the portal origin's cookies (only that origin — the host app's other WebView cookies are
+     * untouched) so the session ends with the embed. Each name is expired host-only and with an explicit
+     * Domain, at Path=/; a cookie scoped to a narrower Path is not reachable this way.
+     */
+    private fun clearPortalCookies() {
+        runCatching {
+            val cm = CookieManager.getInstance()
+            val base = config.baseUrl.trimEnd('/')
+            val raw = cm.getCookie(base) ?: return
+            val host = runCatching { Uri.parse(base).host }.getOrNull()
+            val secure = base.startsWith("https://")
+            for (name in EmbedInternals.cookieNames(raw)) {
+                for (cookie in EmbedInternals.expiredCookies(name, host, secure)) cm.setCookie(base, cookie)
+            }
+            cm.flush()
+        }
     }
 
     /** applaudiq://sso-callback?code=… (success) or ?error=… (failure) returns from Custom Tabs. */
@@ -214,8 +280,9 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
             // Show the failure on the FRAMEABLE embed page, which renders the "Authentication Failed" card
             // (the portal's /sso-callback page is X-Frame-Options: DENY, so it can't be reused by the Capacitor
             // iframe — all SDKs route SSO errors here for consistency). "Return to login" retries in the embed.
+            // No token in the URL: the portal only accepts it via the applaudiq:init-token message.
             val errUrl =
-                EmbedInternals.buildEmbedUrl(config.baseUrl, config.mode.raw, config.key, config.token) +
+                EmbedInternals.buildEmbedUrl(config.baseUrl, config.mode.raw, config.key) +
                     "&sso_error=" + java.net.URLEncoder.encode(message, "UTF-8")
             webView.loadUrl(errUrl)
         }
@@ -266,9 +333,12 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
             }
         }
 
-        /** Reported by completeSSO()'s in-webview fetch when the one-time code exchange fails. */
+        /** Legacy hook (completeSSO() now reports through postMessage); gated like onMessage. */
         @JavascriptInterface
-        fun onSsoError() = runOnUiThread { config.onError?.invoke("sso_exchange_failed") }
+        fun onSsoError() = runOnUiThread {
+            if (!EmbedInternals.sameOrigin(webView.url, config.baseUrl)) return@runOnUiThread
+            config.onError?.invoke("sso_exchange_failed")
+        }
     }
 
     private fun dispatch(json: String) {
@@ -400,7 +470,11 @@ class ApplaudIQEmbedActivity : ComponentActivity() {
                 if (!r.ok) throw new Error('sso_exchange_failed');
                 window.location.replace('/');
               } catch (e) {
-                ApplaudIQAndroid.onSsoError();
+                try {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    source: 'applaudiq-embed', type: 'applaudiq:error', payload: { message: 'sso_exchange_failed' }
+                  }));
+                } catch (_) {}
               }
             })();
         """.trimIndent()
