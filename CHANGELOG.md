@@ -5,6 +5,10 @@ All notable changes to ApplaudIQEmbed (Android) are documented here. This projec
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.4.0] — LTS
+
 **Security.** The bridge now accepts messages only from the portal origin in the main frame
 (`WebViewCompat.addWebMessageListener`, with the old interface kept as a gated fallback); the one-time
 embed token is no longer put in the embed URL (it is still sent by `applaudiq:init-token`). New
