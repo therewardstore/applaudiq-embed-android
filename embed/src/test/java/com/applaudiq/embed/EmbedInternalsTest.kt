@@ -42,9 +42,35 @@ class EmbedInternalsTest {
         )
     }
 
-    @Test fun embedUrl_tokenOnlyInAuto() {
-        assertTrue(EmbedInternals.buildEmbedUrl(portal, "auto", "pk_live_x", "tok123").contains("&token=tok123"))
-        assertFalse(EmbedInternals.buildEmbedUrl(portal, "manual", "pk_live_x", "tok123").contains("token"))
+    @Test fun embedUrl_neverCarriesToken() {
+        // The one-time token travels only via the applaudiq:init-token message (V-06).
+        assertFalse(EmbedInternals.buildEmbedUrl(portal, "auto", "pk_live_x").contains("token"))
+        assertFalse(EmbedInternals.buildEmbedUrl(portal, "manual", "pk_live_x").contains("token"))
+    }
+
+    // ---- cookie expiry (clearSessionOnClose) ----
+    @Test fun cookieNames_parsesHeader() {
+        assertEquals(listOf("sid", "csrf", "__Host-x"), EmbedInternals.cookieNames("sid=a; csrf=b=c;  __Host-x=1; sid=z"))
+        assertTrue(EmbedInternals.cookieNames(null).isEmpty())
+        assertTrue(EmbedInternals.cookieNames("").isEmpty())
+    }
+
+    @Test fun expiredCookies_hostOnlyAndDomain() {
+        val c = EmbedInternals.expiredCookies("sid", "recognize.applaudiq.com", secure = true)
+        assertEquals(2, c.size)
+        assertTrue(c.all { it.startsWith("sid=;") && it.contains("Max-Age=0") && it.contains("Path=/") && it.contains("Secure") })
+        assertTrue(c[1].endsWith("; Domain=recognize.applaudiq.com"))
+    }
+
+    @Test fun expiredCookies_hostPrefixHasNoDomain() {
+        val c = EmbedInternals.expiredCookies("__Host-sid", "recognize.applaudiq.com", secure = true)
+        assertEquals(1, c.size)
+        assertFalse(c[0].contains("Domain"))
+    }
+
+    @Test fun bridgeName_matchesPortal() {
+        // vision src/lib/embed/bridge.ts posts via window.ReactNativeWebView.postMessage(string).
+        assertEquals("ReactNativeWebView", EmbedInternals.NATIVE_BRIDGE)
     }
 
     // ---- buildSsoUrl ----

@@ -3,6 +3,14 @@
 All notable changes to ApplaudIQEmbed (Android) are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+**Security.** The bridge now accepts messages only from the portal origin in the main frame
+(`WebViewCompat.addWebMessageListener`, with the old interface kept as a gated fallback); the one-time
+embed token is no longer put in the embed URL (it is still sent by `applaudiq:init-token`). New
+`Config.clearSessionOnClose` (default `false`): when on, the portal's cookies are expired when the
+embed closes, for shared or kiosk devices. Backward-compatible.
+
 ## [1.3.0] — LTS
 
 **Reward-store voucher download.** Adds the `applaudiq:save-file` bridge message (payload

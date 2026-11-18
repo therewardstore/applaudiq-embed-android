@@ -18,14 +18,34 @@ internal object EmbedInternals {
 
     private fun normalizeMode(mode: String): String = if (mode == "manual") "manual" else "auto"
 
-    /** `<baseUrl>/embed?mode={auto|manual}&k={url-encoded key}` (+ optional `&token=` in auto). */
-    fun buildEmbedUrl(baseUrl: String, mode: String, key: String, token: String? = null): String {
+    /** JS object name the portal posts to (`window.ReactNativeWebView.postMessage`). */
+    const val NATIVE_BRIDGE = "ReactNativeWebView"
+
+    /**
+     * `<baseUrl>/embed?mode={auto|manual}&k={url-encoded key}`. The one-time token is NEVER put in the
+     * URL (history, logs, Referer); it is delivered only via the `applaudiq:init-token` message.
+     */
+    fun buildEmbedUrl(baseUrl: String, mode: String, key: String): String {
         val base = baseUrl.trimEnd('/')
         val m = normalizeMode(mode)
         val sb = StringBuilder("$base/embed?mode=$m")
         if (key.isNotEmpty()) sb.append("&k=").append(enc(key))
-        if (m == "auto" && !token.isNullOrEmpty()) sb.append("&token=").append(enc(token))
         return sb.toString()
+    }
+
+    /** Cookie names from a `CookieManager.getCookie()` header (`a=1; b=2`). */
+    fun cookieNames(cookieHeader: String?): List<String> =
+        cookieHeader.orEmpty().split(';')
+            .map { it.substringBefore('=').trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+
+    /** Set-Cookie values that expire [name] at Path=/ — host-only, and Domain=[host] when known. */
+    fun expiredCookies(name: String, host: String?, secure: Boolean): List<String> {
+        val tail = "; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0" + if (secure) "; Secure" else ""
+        val out = mutableListOf("$name=$tail")
+        if (!host.isNullOrEmpty() && !name.startsWith("__Host-")) out.add("$name=$tail; Domain=$host")
+        return out
     }
 
     /**
